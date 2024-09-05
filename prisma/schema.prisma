@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+enum Platform {
+  TWITTER
+  YOUTUBE
+  TELEGRAM
+}
+
+enum TaskType {
+  FOLLOW
+  LIKE
+  REPOST
+}
+
+enum TaskStatusEnum {
+  NONE
+  PENDING
+  COMPLETED
+}
+
+model User {
+  id            String       @id @default(uuid()) @db.VarChar(36)
+  discord       String       @unique
+  twitter       String       @unique
+  email         String       @unique
+  walletAddress String?
+  password      String?
+  xp            Int          @default(0)
+  createdAt     DateTime     @default(now())
+  tasks         TaskStatus[]
+  NFTs          UserNFT[]
+}
+
+model Task {
+  id           String       @id @default(uuid()) @db.VarChar(36)
+  xp           Int
+  title        String
+  description  String
+  link         String
+  platform     Platform
+  taskType     TaskType
+  active       Boolean      @default(true)
+  daily        Boolean
+  createdAt    DateTime     @default(now())
+  expiresAt    DateTime?
+  userStatuses TaskStatus[]
+}
+
+model TaskStatus {
+  id        String         @id @default(uuid()) @db.VarChar(36)
+  xp        Int
+  userId    String
+  taskId    String
+  status    TaskStatusEnum
+  user      User           @relation(fields: [userId], references: [id])
+  task      Task           @relation(fields: [taskId], references: [id])
+  createdAt DateTime       @default(now())
+
+  @@unique([userId, taskId])
+}
+
+model NFT {
+  id    String    @id @default(uuid()) @db.VarChar(36)
+  xp    Int
+  name  String    @unique
+  img   String
+  users UserNFT[]
+}
+
+model UserNFT {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  userId    String
+  nftId     String
+  user      User     @relation(fields: [userId], references: [id])
+  nft       NFT      @relation(fields: [nftId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, nftId])
+}
